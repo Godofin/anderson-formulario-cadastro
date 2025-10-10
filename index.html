@@ -176,7 +176,12 @@
             
             <div>
                 <label for="year">Ano do Evento:</label>
-                <input type="number" id="year" name="year" placeholder="Ex: 2025" required>
+                <input type="text" id="year" name="year" placeholder="Ex: 2025" required>
+            </div>
+            
+            <div class="full-width">
+                <label for="cities">Cidades (separadas por vírgula):</label>
+                <input type="text" id="cities" name="cities" placeholder="Ex: São Paulo, Rio de Janeiro, Belo Horizonte">
             </div>
             
             <div class="checkbox-group full-width">
@@ -222,7 +227,6 @@
                     events.forEach(event => {
                         const item = document.createElement('div');
                         item.className = 'event-item';
-                        // MODIFICADO: Exibe o ano ao lado do título
                         item.innerHTML = `
                             <div class="event-details">
                                 <strong>${event.title} (${event.year || 'Sem ano'})</strong>
@@ -259,7 +263,8 @@
                 form.date.value = event.date;
                 form.buttonText.value = event.buttonText;
                 form.active_event.checked = event.active_event;
-                form.year.value = event.year; // ADICIONADO: Popula o campo 'year'
+                form.year.value = event.year;
+                form.cities.value = event.cities ? event.cities.join(', ') : '';
 
                 formTitle.textContent = 'Editando Evento';
                 submitBtn.textContent = 'Salvar Alterações';
@@ -303,17 +308,20 @@
             const id = eventIdInput.value;
             const isEditing = !!id;
 
-            // MODIFICADO: Inclui o campo 'year' no objeto enviado
+            const citiesInput = form.cities.value.trim();
+            const citiesArray = citiesInput ? citiesInput.split(',').map(city => city.trim()).filter(city => city !== '') : [];
+
             const eventData = {
-                title: form.title.value,
-                eventName: form.eventName.value,
                 image: form.image.value,
                 alt: form.alt.value,
-                description: form.description.value,
+                title: form.title.value,
                 date: form.date.value,
+                year: form.year.value,
+                description: form.description.value,
                 buttonText: form.buttonText.value,
-                active_event: form.active_event.checked,
-                year: parseInt(form.year.value) // ADICIONADO: Envia o campo 'year'
+                eventName: form.eventName.value,
+                cities: citiesArray,
+                active_event: form.active_event.checked
             };
 
             const url = isEditing ? `${apiUrl}/${id}` : apiUrl;
