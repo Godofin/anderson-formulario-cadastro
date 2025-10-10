@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Cadastro de Eventos</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        form {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media (min-width: 600px) {
+            form {
+                grid-template-columns: 1fr 1fr;
+            }
+            .full-width {
+                grid-column: 1 / -1;
+            }
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+        input[type="text"],
+        input[type="url"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="checkbox"] {
+            width: auto;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #cancel-edit-btn {
+            background-color: #7f8c8d;
+        }
+        #cancel-edit-btn:hover {
+            background-color: #6c7a7d;
+        }
+        .form-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 10px;
+        }
+
+        #event-list {
+            margin-top: 30px;
+        }
+        .event-item {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .event-details {
+            flex-grow: 1;
+        }
+        .event-details strong {
+            font-size: 1.1em;
+            color: #2c3e50;
+        }
+        .event-details .status {
+            font-style: italic;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        .event-actions button {
+            background-color: #e67e22;
+            font-size: 14px;
+            padding: 8px 12px;
+            margin-left: 5px;
+        }
+        .event-actions button:hover {
+            background-color: #d35400;
+        }
+        .event-actions .delete-btn {
+            background-color: #e74c3c;
+        }
+        .event-actions .delete-btn:hover {
+            background-color: #c0392b;
+        }
+        #loading {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 id="form-title">Cadastrar Novo Evento</h1>
+        <form id="event-form">
+            <input type="hidden" id="event-id">
+
+            <div>
+                <label for="title">Título do Evento:</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div>
+                <label for="eventName">Nome (Identificador):</label>
+                <input type="text" id="eventName" name="eventName" required>
+            </div>
+            <div>
+                <label for="image">URL da Imagem:</label>
+                <input type="url" id="image" name="image" required>
+            </div>
+            <div>
+                <label for="alt">Texto Alternativo da Imagem:</label>
+                <input type="text" id="alt" name="alt" required>
+            </div>
+             <div class="full-width">
+                <label for="description">Descrição:</label>
+                <textarea id="description" name="description" required></textarea>
+            </div>
+            <div>
+                <label for="date">Data e Local:</label>
+                <input type="text" id="date" name="date" required>
+            </div>
+            <div>
+                <label for="buttonText">Texto do Botão:</label>
+                <input type="text" id="buttonText" name="buttonText" required>
+            </div>
+            <div class="checkbox-group full-width">
+                <input type="checkbox" id="active_event" name="active_event" checked>
+                <label for="active_event">Evento Ativo?</label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" id="submit-btn">Cadastrar Evento</button>
+                <button type="button" id="cancel-edit-btn" style="display: none;">Cancelar Edição</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Eventos Cadastrados</h2>
+        <div id="loading">Carregando eventos...</div>
+        <div id="event-list"></div>
+    </div>
+
+    <script>
+        const apiUrl = "https://anderson-fast-api.onrender.com/api/v1/events";
+        const form = document.getElementById('event-form');
+        const eventIdInput = document.getElementById('event-id');
+        const formTitle = document.getElementById('form-title');
+        const submitBtn = document.getElementById('submit-btn');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const eventList = document.getElementById('event-list');
+        const loadingDiv = document.getElementById('loading');
+
+        // Função para buscar e exibir os eventos
+        async function fetchEvents() {
+            loadingDiv.style.display = 'block';
+            eventList.innerHTML = '';
+            try {
+                const response = await fetch(`${apiUrl}/all`);
+                if (!response.ok) throw new Error('Erro ao buscar eventos.');
+                
+                const events = await response.json();
+                
+                if (events.length === 0) {
+                   eventList.innerHTML = '<p>Nenhum evento cadastrado ainda.</p>';
+                } else {
+                    events.forEach(event => {
+                        const item = document.createElement('div');
+                        item.className = 'event-item';
+                        item.innerHTML = `
+                            <div class="event-details">
+                                <strong>${event.title}</strong>
+                                <div class="status">${event.active_event ? 'Ativo' : 'Inativo'}</div>
+                            </div>
+                            <div class="event-actions">
+                                <button onclick="editEvent(${event.id})">Editar</button>
+                                <button class="delete-btn" onclick="deleteEvent(${event.id})">Excluir</button>
+                            </div>
+                        `;
+                        eventList.appendChild(item);
+                    });
+                }
+            } catch (error) {
+                eventList.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Função para preencher o formulário para edição
+        async function editEvent(id) {
+            try {
+                const response = await fetch(`${apiUrl}/${id}`);
+                if (!response.ok) throw new Error('Evento não encontrado.');
+                const event = await response.json();
+
+                eventIdInput.value = event.id;
+                form.title.value = event.title;
+                form.eventName.value = event.eventName;
+                form.image.value = event.image;
+                form.alt.value = event.alt;
+                form.description.value = event.description;
+                form.date.value = event.date;
+                form.buttonText.value = event.buttonText;
+                form.active_event.checked = event.active_event;
+
+                formTitle.textContent = 'Editando Evento';
+                submitBtn.textContent = 'Salvar Alterações';
+                cancelEditBtn.style.display = 'inline-block';
+                window.scrollTo(0, 0);
+
+            } catch (error) {
+                alert(`Erro ao carregar evento para edição: ${error.message}`);
+            }
+        }
+
+        // Função para deletar um evento
+        async function deleteEvent(id) {
+            if (!confirm('Tem certeza que deseja excluir este evento?')) return;
+
+            try {
+                const response = await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Falha ao excluir o evento.');
+
+                alert('Evento excluído com sucesso!');
+                fetchEvents();
+
+            } catch (error) {
+                alert(`Erro: ${error.message}`);
+            }
+        }
+        
+        // Função para limpar e resetar o formulário
+        function resetForm() {
+            form.reset();
+            eventIdInput.value = '';
+            formTitle.textContent = 'Cadastrar Novo Evento';
+            submitBtn.textContent = 'Cadastrar Evento';
+            cancelEditBtn.style.display = 'none';
+        }
+
+        // Event listener para o formulário (Criação e Edição)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = eventIdInput.value;
+            const isEditing = !!id;
+
+            const eventData = {
+                title: form.title.value,
+                eventName: form.eventName.value,
+                image: form.image.value,
+                alt: form.alt.value,
+                description: form.description.value,
+                date: form.date.value,
+                buttonText: form.buttonText.value,
+                active_event: form.active_event.checked
+            };
+
+            const url = isEditing ? `${apiUrl}/${id}` : apiUrl;
+            const method = isEditing ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(eventData)
+                });
+
+                if (!response.ok) {
+                    const errorDetail = await response.json();
+                    throw new Error(errorDetail.detail || 'Ocorreu um erro.');
+                }
+                
+                alert(`Evento ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso!`);
+                resetForm();
+                fetchEvents();
+
+            } catch (error) {
+                alert(`Erro: ${error.message}`);
+            }
+        });
+        
+        // Event listener para o botão de cancelar edição
+        cancelEditBtn.addEventListener('click', resetForm);
+
+        // Carrega os eventos ao iniciar a página
+        document.addEventListener('DOMContentLoaded', fetchEvents);
+    </script>
+</body>
+</html>
