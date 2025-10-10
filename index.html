@@ -45,6 +45,7 @@
         }
         input[type="text"],
         input[type="url"],
+        input[type="number"],
         textarea {
             width: 100%;
             padding: 10px;
@@ -172,6 +173,12 @@
                 <label for="buttonText">Texto do Botão:</label>
                 <input type="text" id="buttonText" name="buttonText" required>
             </div>
+            
+            <div>
+                <label for="year">Ano do Evento:</label>
+                <input type="number" id="year" name="year" placeholder="Ex: 2025" required>
+            </div>
+            
             <div class="checkbox-group full-width">
                 <input type="checkbox" id="active_event" name="active_event" checked>
                 <label for="active_event">Evento Ativo?</label>
@@ -215,9 +222,10 @@
                     events.forEach(event => {
                         const item = document.createElement('div');
                         item.className = 'event-item';
+                        // MODIFICADO: Exibe o ano ao lado do título
                         item.innerHTML = `
                             <div class="event-details">
-                                <strong>${event.title}</strong>
+                                <strong>${event.title} (${event.year || 'Sem ano'})</strong>
                                 <div class="status">${event.active_event ? 'Ativo' : 'Inativo'}</div>
                             </div>
                             <div class="event-actions">
@@ -251,6 +259,7 @@
                 form.date.value = event.date;
                 form.buttonText.value = event.buttonText;
                 form.active_event.checked = event.active_event;
+                form.year.value = event.year; // ADICIONADO: Popula o campo 'year'
 
                 formTitle.textContent = 'Editando Evento';
                 submitBtn.textContent = 'Salvar Alterações';
@@ -294,6 +303,7 @@
             const id = eventIdInput.value;
             const isEditing = !!id;
 
+            // MODIFICADO: Inclui o campo 'year' no objeto enviado
             const eventData = {
                 title: form.title.value,
                 eventName: form.eventName.value,
@@ -302,7 +312,8 @@
                 description: form.description.value,
                 date: form.date.value,
                 buttonText: form.buttonText.value,
-                active_event: form.active_event.checked
+                active_event: form.active_event.checked,
+                year: parseInt(form.year.value) // ADICIONADO: Envia o campo 'year'
             };
 
             const url = isEditing ? `${apiUrl}/${id}` : apiUrl;
