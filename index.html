@@ -6,7 +6,7 @@
     <title>Admin - Cadastro de Eventos</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             line-height: 1.6;
             color: #333;
             max-width: 900px;
@@ -46,6 +46,7 @@
         input[type="text"],
         input[type="url"],
         input[type="number"],
+        input[type="date"],
         textarea {
             width: 100%;
             padding: 10px;
@@ -90,6 +91,9 @@
             gap: 10px;
         }
 
+        /* Estilos do Popover removidos */
+        
+        /* Lista de Eventos */
         #event-list {
             margin-top: 30px;
         }
@@ -149,10 +153,10 @@
                 <label for="title">Título do Evento:</label>
                 <input type="text" id="title" name="title" required>
             </div>
-            <div>
-                <label for="eventName">Nome (Identificador):</label>
-                <input type="text" id="eventName" name="eventName" required>
-            </div>
+            
+            <!-- Campo Nome (Identificador) é hidden e usa o Título -->
+            <input type="hidden" id="eventName" name="eventName">
+
             <div>
                 <label for="image">URL da Imagem:</label>
                 <input type="url" id="image" name="image" required>
@@ -161,23 +165,32 @@
                 <label for="alt">Texto Alternativo da Imagem:</label>
                 <input type="text" id="alt" name="alt" required>
             </div>
-             <div class="full-width">
+            <div class="full-width">
                 <label for="description">Descrição:</label>
                 <textarea id="description" name="description" required></textarea>
             </div>
+            
+            <!-- CAMPO DATA E LOCAL SIMPLES -->
             <div>
-                <label for="date">Data e Local:</label>
-                <input type="text" id="date" name="date" required>
+                <label for="date">Data e Local (Texto):</label>
+                <input type="text" id="date" name="date" 
+                       placeholder="Exemplo: 01 de Janeiro de 2025 - Estádio, Cidade/Estado" required>
+            </div>
+            <!-- FIM CAMPO DATA E LOCAL SIMPLES -->
+
+            <div>
+                <label for="date_event">Data do Evento (YYYY-MM-DD):</label>
+                <input type="date" id="date_event" name="date_event" required>
             </div>
             <div>
                 <label for="buttonText">Texto do Botão:</label>
-                <input type="text" id="buttonText" name="buttonText" required>
+                <input type="text" id="buttonText" name="buttonText" 
+                       value="Reservar agora" 
+                       placeholder="Ex: Reservar para 01 de Janeiro" required>
             </div>
             
-            <div>
-                <label for="year">Ano do Evento:</label>
-                <input type="text" id="year" name="year" placeholder="Ex: 2025" required>
-            </div>
+            <!-- Campo Ano do Evento (year) é hidden e calculado no JS -->
+            <input type="hidden" id="year" name="year">
             
             <div class="full-width">
                 <label for="cities">Cidades (separadas por vírgula):</label>
@@ -202,7 +215,7 @@
     </div>
 
     <script>
-        const apiUrl = "https://anderson-fast-api.onrender.com/api/v1/events";
+        const apiUrl = "https://anderson-fast-api.onrender.com/api/v1/events"; 
         const form = document.getElementById('event-form');
         const eventIdInput = document.getElementById('event-id');
         const formTitle = document.getElementById('form-title');
@@ -210,6 +223,12 @@
         const cancelEditBtn = document.getElementById('cancel-edit-btn');
         const eventList = document.getElementById('event-list');
         const loadingDiv = document.getElementById('loading');
+        
+        // Elementos do Popover (removidos os listeners, mas mantido o código base)
+        // const popoverTrigger = document.getElementById('popover-trigger');
+        // const popoverContent = document.getElementById('popover-description');
+
+        // Removida a lógica do Popover
 
         // Função para buscar e exibir os eventos
         async function fetchEvents() {
@@ -222,7 +241,7 @@
                 const events = await response.json();
                 
                 if (events.length === 0) {
-                   eventList.innerHTML = '<p>Nenhum evento cadastrado ainda.</p>';
+                    eventList.innerHTML = '<p>Nenhum evento cadastrado ainda.</p>';
                 } else {
                     events.forEach(event => {
                         const item = document.createElement('div');
@@ -230,7 +249,9 @@
                         item.innerHTML = `
                             <div class="event-details">
                                 <strong>${event.title} (${event.year || 'Sem ano'})</strong>
-                                <div class="status">${event.active_event ? 'Ativo' : 'Inativo'}</div>
+                                <div>Data Texto: ${event.date}</div>
+                                <div>Data ID: ${event.date_event}</div>
+                                <div class="status">${event.active_event ? 'Ativo' : 'Inativo'} | ID: ${event.id}</div>
                             </div>
                             <div class="event-actions">
                                 <button onclick="editEvent(${event.id})">Editar</button>
@@ -247,8 +268,8 @@
             }
         }
 
-        // Função para preencher o formulário para edição
-        async function editEvent(id) {
+        // Torna a função editEvent acessível globalmente
+        window.editEvent = async function(id) {
             try {
                 const response = await fetch(`${apiUrl}/${id}`);
                 if (!response.ok) throw new Error('Evento não encontrado.');
@@ -256,14 +277,13 @@
 
                 eventIdInput.value = event.id;
                 form.title.value = event.title;
-                form.eventName.value = event.eventName;
                 form.image.value = event.image;
                 form.alt.value = event.alt;
                 form.description.value = event.description;
                 form.date.value = event.date;
+                form.date_event.value = event.date_event;
                 form.buttonText.value = event.buttonText;
                 form.active_event.checked = event.active_event;
-                form.year.value = event.year;
                 form.cities.value = event.cities ? event.cities.join(', ') : '';
 
                 formTitle.textContent = 'Editando Evento';
@@ -272,13 +292,15 @@
                 window.scrollTo(0, 0);
 
             } catch (error) {
-                alert(`Erro ao carregar evento para edição: ${error.message}`);
+                console.error(`Erro ao carregar evento para edição: ${error.message}`);
+                alert(`Erro ao carregar evento para edição: ${error.message}`); 
             }
         }
 
-        // Função para deletar um evento
-        async function deleteEvent(id) {
-            if (!confirm('Tem certeza que deseja excluir este evento?')) return;
+        // Torna a função deleteEvent acessível globalmente
+        window.deleteEvent = async function(id) {
+            const confirmed = confirm('Tem certeza que deseja excluir este evento?');
+            if (!confirmed) return;
 
             try {
                 const response = await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
@@ -288,6 +310,7 @@
                 fetchEvents();
 
             } catch (error) {
+                console.error(`Erro: ${error.message}`);
                 alert(`Erro: ${error.message}`);
             }
         }
@@ -299,6 +322,8 @@
             formTitle.textContent = 'Cadastrar Novo Evento';
             submitBtn.textContent = 'Cadastrar Evento';
             cancelEditBtn.style.display = 'none';
+            // Reseta o valor padrão do botão
+            form.buttonText.value = 'Reservar agora';
         }
 
         // Event listener para o formulário (Criação e Edição)
@@ -311,15 +336,34 @@
             const citiesInput = form.cities.value.trim();
             const citiesArray = citiesInput ? citiesInput.split(',').map(city => city.trim()).filter(city => city !== '') : [];
 
+            const eventTitle = form.title.value;
+            const dateEventValue = form.date_event.value;
+
+            // 1. Sincronizar Título e EventName (eventName recebe o title)
+            const eventNameValue = eventTitle; 
+            
+            // 2. Calcular o ano automaticamente a partir de date_event
+            let yearValue = '';
+            if (dateEventValue) {
+                try {
+                    // Espera-se o formato YYYY-MM-DD
+                    yearValue = dateEventValue.substring(0, 4); 
+                } catch(err) {
+                    console.error("Erro ao extrair ano da data:", err);
+                }
+            }
+
+
             const eventData = {
                 image: form.image.value,
                 alt: form.alt.value,
-                title: form.title.value,
+                title: eventTitle,
                 date: form.date.value,
-                year: form.year.value,
+                date_event: dateEventValue,
+                year: yearValue, // <-- Ano calculado
                 description: form.description.value,
                 buttonText: form.buttonText.value,
-                eventName: form.eventName.value,
+                eventName: eventNameValue, // <-- Identificador é igual ao título
                 cities: citiesArray,
                 active_event: form.active_event.checked
             };
@@ -344,6 +388,7 @@
                 fetchEvents();
 
             } catch (error) {
+                console.error(`Erro: ${error.message}`);
                 alert(`Erro: ${error.message}`);
             }
         });
