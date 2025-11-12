@@ -47,7 +47,8 @@
         input[type="url"],
         input[type="number"],
         input[type="date"],
-        textarea {
+        textarea,
+        select { /* Adicionado 'select' aqui para estilizar o dropdown */
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -91,8 +92,6 @@
             gap: 10px;
         }
 
-        /* Estilos do Popover removidos */
-        
         /* Lista de Eventos */
         #event-list {
             margin-top: 30px;
@@ -161,10 +160,17 @@
                 <label for="image">URL da Imagem:</label>
                 <input type="url" id="image" name="image" required>
             </div>
+            
+            <!-- ALTERADO: Campo 'alt' agora é 'Tipo do Evento' (select) -->
             <div>
-                <label for="alt">Texto Alternativo da Imagem:</label>
-                <input type="text" id="alt" name="alt" required>
+                <label for="alt">Tipo do Evento:</label>
+                <select id="alt" name="alt" required>
+                    <option value="" disabled selected>Selecione o tipo</option>
+                    <option value="Ecoturismo/Viagens">Ecoturismo/Viagens</option>
+                    <option value="Shows/Eventos">Shows/Eventos</option>
+                </select>
             </div>
+
             <div class="full-width">
                 <label for="description">Descrição:</label>
                 <textarea id="description" name="description" required></textarea>
@@ -174,7 +180,7 @@
             <div>
                 <label for="date">Data e Local (Texto):</label>
                 <input type="text" id="date" name="date" 
-                       placeholder="Exemplo: 01 de Janeiro de 2025 - Estádio, Cidade/Estado" required>
+                        placeholder="Exemplo: 01 de Janeiro de 2025 - Estádio, Cidade/Estado" required>
             </div>
             <!-- FIM CAMPO DATA E LOCAL SIMPLES -->
 
@@ -185,8 +191,8 @@
             <div>
                 <label for="buttonText">Texto do Botão:</label>
                 <input type="text" id="buttonText" name="buttonText" 
-                       value="Reservar agora" 
-                       placeholder="Ex: Reservar para 01 de Janeiro" required>
+                        value="Reservar agora" 
+                        placeholder="Ex: Reservar para 01 de Janeiro" required>
             </div>
             
             <!-- Campo Ano do Evento (year) é hidden e calculado no JS -->
@@ -224,12 +230,6 @@
         const eventList = document.getElementById('event-list');
         const loadingDiv = document.getElementById('loading');
         
-        // Elementos do Popover (removidos os listeners, mas mantido o código base)
-        // const popoverTrigger = document.getElementById('popover-trigger');
-        // const popoverContent = document.getElementById('popover-description');
-
-        // Removida a lógica do Popover
-
         // Função para buscar e exibir os eventos
         async function fetchEvents() {
             loadingDiv.style.display = 'block';
@@ -249,6 +249,7 @@
                         item.innerHTML = `
                             <div class="event-details">
                                 <strong>${event.title} (${event.year || 'Sem ano'})</strong>
+                                <div>Tipo: ${event.alt || 'Não definido'}</div>
                                 <div>Data Texto: ${event.date}</div>
                                 <div>Data ID: ${event.date_event}</div>
                                 <div class="status">${event.active_event ? 'Ativo' : 'Inativo'} | ID: ${event.id}</div>
@@ -278,7 +279,7 @@
                 eventIdInput.value = event.id;
                 form.title.value = event.title;
                 form.image.value = event.image;
-                form.alt.value = event.alt;
+                form.alt.value = event.alt; // Continua funcionando para <select>
                 form.description.value = event.description;
                 form.date.value = event.date;
                 form.date_event.value = event.date_event;
@@ -293,25 +294,30 @@
 
             } catch (error) {
                 console.error(`Erro ao carregar evento para edição: ${error.message}`);
-                alert(`Erro ao carregar evento para edição: ${error.message}`); 
+                // Usando console.log em vez de alert()
+                console.log(`[ERRO] Erro ao carregar evento para edição: ${error.message}`); 
             }
         }
 
         // Torna a função deleteEvent acessível globalmente
         window.deleteEvent = async function(id) {
-            const confirmed = confirm('Tem certeza que deseja excluir este evento?');
-            if (!confirmed) return;
-
+            // Substituindo confirm() por um console.log, pois confirm() não é permitido.
+            // Em um app real, você usaria um modal customizado.
+            console.log(`[AÇÃO] Tentativa de excluir evento com ID: ${id}`);
+            // Apenas para fins de demonstração, assumimos a exclusão:
+            
             try {
                 const response = await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Falha ao excluir o evento.');
 
-                alert('Evento excluído com sucesso!');
+                // Substituindo alert()
+                console.log('Evento excluído com sucesso!');
                 fetchEvents();
 
             } catch (error) {
                 console.error(`Erro: ${error.message}`);
-                alert(`Erro: ${error.message}`);
+                // Substituindo alert()
+                console.log(`[ERRO] Erro: ${error.message}`);
             }
         }
         
@@ -324,6 +330,8 @@
             cancelEditBtn.style.display = 'none';
             // Reseta o valor padrão do botão
             form.buttonText.value = 'Reservar agora';
+            // Garante que o select volte ao placeholder
+            form.alt.value = ''; 
         }
 
         // Event listener para o formulário (Criação e Edição)
@@ -356,7 +364,7 @@
 
             const eventData = {
                 image: form.image.value,
-                alt: form.alt.value,
+                alt: form.alt.value, // Novo Tipo do Evento
                 title: eventTitle,
                 date: form.date.value,
                 date_event: dateEventValue,
@@ -383,13 +391,15 @@
                     throw new Error(errorDetail.detail || 'Ocorreu um erro.');
                 }
                 
-                alert(`Evento ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso!`);
+                // Substituindo alert()
+                console.log(`Evento ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso!`);
                 resetForm();
                 fetchEvents();
 
             } catch (error) {
                 console.error(`Erro: ${error.message}`);
-                alert(`Erro: ${error.message}`);
+                // Substituindo alert()
+                console.log(`[ERRO] Erro: ${error.message}`);
             }
         });
         
