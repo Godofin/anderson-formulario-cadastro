@@ -139,6 +139,10 @@
             font-size: 1.2em;
             padding: 20px;
         }
+        /* Estilo para o campo de busca */
+        .search-container {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -216,6 +220,12 @@
 
     <div class="container">
         <h2>Eventos Cadastrados</h2>
+        <!-- NOVO CAMPO DE BUSCA -->
+        <div class="search-container">
+            <label for="event-search">Buscar Evento por Título:</label>
+            <input type="text" id="event-search" placeholder="Digite o título do evento..." style="width: 100%;">
+        </div>
+        <!-- FIM NOVO CAMPO DE BUSCA -->
         <div id="loading">Carregando eventos...</div>
         <div id="event-list"></div>
     </div>
@@ -230,7 +240,40 @@
         const eventList = document.getElementById('event-list');
         const loadingDiv = document.getElementById('loading');
         
-        // Função para buscar e exibir os eventos
+        // Novo: Variável global para armazenar todos os eventos e evitar chamadas repetidas
+        let eventsCache = [];
+        const eventSearchInput = document.getElementById('event-search');
+
+        // Novo: Função para renderizar a lista de eventos (recebe um array para exibir)
+        function renderEvents(eventsToDisplay) {
+            eventList.innerHTML = ''; // Limpa a lista existente
+
+            if (eventsToDisplay.length === 0) {
+                eventList.innerHTML = '<p>Nenhum evento encontrado.</p>';
+                return;
+            }
+
+            eventsToDisplay.forEach(event => {
+                const item = document.createElement('div');
+                item.className = 'event-item';
+                item.innerHTML = `
+                    <div class="event-details">
+                        <strong>${event.title} (${event.year || 'Sem ano'})</strong>
+                        <div>Tipo: ${event.alt || 'Não definido'}</div>
+                        <div>Data Texto: ${event.date}</div>
+                        <div>Data ID: ${event.date_event}</div>
+                        <div class="status">${event.active_event ? 'Ativo' : 'Inativo'} | ID: ${event.id}</div>
+                    </div>
+                    <div class="event-actions">
+                        <button onclick="editEvent(${event.id})">Editar</button>
+                        <button class="delete-btn" onclick="deleteEvent(${event.id})">Excluir</button>
+                    </div>
+                `;
+                eventList.appendChild(item);
+            });
+        }
+        
+        // Função para buscar e exibir os eventos (agora armazena no cache)
         async function fetchEvents() {
             loadingDiv.style.display = 'block';
             eventList.innerHTML = '';
@@ -240,33 +283,35 @@
                 
                 const events = await response.json();
                 
-                if (events.length === 0) {
+                eventsCache = events; // Armazena a lista completa
+                
+                if (eventsCache.length === 0) {
                     eventList.innerHTML = '<p>Nenhum evento cadastrado ainda.</p>';
                 } else {
-                    events.forEach(event => {
-                        const item = document.createElement('div');
-                        item.className = 'event-item';
-                        item.innerHTML = `
-                            <div class="event-details">
-                                <strong>${event.title} (${event.year || 'Sem ano'})</strong>
-                                <div>Tipo: ${event.alt || 'Não definido'}</div>
-                                <div>Data Texto: ${event.date}</div>
-                                <div>Data ID: ${event.date_event}</div>
-                                <div class="status">${event.active_event ? 'Ativo' : 'Inativo'} | ID: ${event.id}</div>
-                            </div>
-                            <div class="event-actions">
-                                <button onclick="editEvent(${event.id})">Editar</button>
-                                <button class="delete-btn" onclick="deleteEvent(${event.id})">Excluir</button>
-                            </div>
-                        `;
-                        eventList.appendChild(item);
-                    });
+                    renderEvents(eventsCache); // Renderiza a lista completa inicialmente
                 }
             } catch (error) {
                 eventList.innerHTML = `<p style="color: red;">${error.message}</p>`;
             } finally {
                 loadingDiv.style.display = 'none';
             }
+        }
+
+        // Novo: Função para lidar com a busca e filtro
+        function handleSearch() {
+            const searchTerm = eventSearchInput.value.toLowerCase().trim();
+
+            if (searchTerm === '') {
+                renderEvents(eventsCache); // Se a busca estiver vazia, mostra todos do cache
+                return;
+            }
+
+            // Filtra os eventos do cache com base no título
+            const filteredEvents = eventsCache.filter(event => 
+                event.title.toLowerCase().includes(searchTerm)
+            );
+
+            renderEvents(filteredEvents);
         }
 
         // Torna a função editEvent acessível globalmente
@@ -279,7 +324,7 @@
                 eventIdInput.value = event.id;
                 form.title.value = event.title;
                 form.image.value = event.image;
-                form.alt.value = event.alt; // Continua funcionando para <select>
+                form.alt.value = event.alt; 
                 form.description.value = event.description;
                 form.date.value = event.date;
                 form.date_event.value = event.date_event;
@@ -291,32 +336,28 @@
                 submitBtn.textContent = 'Salvar Alterações';
                 cancelEditBtn.style.display = 'inline-block';
                 window.scrollTo(0, 0);
+                eventSearchInput.value = ''; // Limpa a busca ao editar
 
             } catch (error) {
                 console.error(`Erro ao carregar evento para edição: ${error.message}`);
-                // Usando console.log em vez de alert()
                 console.log(`[ERRO] Erro ao carregar evento para edição: ${error.message}`); 
             }
         }
 
         // Torna a função deleteEvent acessível globalmente
         window.deleteEvent = async function(id) {
-            // Substituindo confirm() por um console.log, pois confirm() não é permitido.
-            // Em um app real, você usaria um modal customizado.
             console.log(`[AÇÃO] Tentativa de excluir evento com ID: ${id}`);
-            // Apenas para fins de demonstração, assumimos a exclusão:
             
             try {
                 const response = await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Falha ao excluir o evento.');
 
-                // Substituindo alert()
                 console.log('Evento excluído com sucesso!');
-                fetchEvents();
+                // Após exclusão, recarrega os eventos (e o cache)
+                fetchEvents(); 
 
             } catch (error) {
                 console.error(`Erro: ${error.message}`);
-                // Substituindo alert()
                 console.log(`[ERRO] Erro: ${error.message}`);
             }
         }
@@ -328,10 +369,10 @@
             formTitle.textContent = 'Cadastrar Novo Evento';
             submitBtn.textContent = 'Cadastrar Evento';
             cancelEditBtn.style.display = 'none';
-            // Reseta o valor padrão do botão
             form.buttonText.value = 'Reservar agora';
-            // Garante que o select volte ao placeholder
             form.alt.value = ''; 
+            eventSearchInput.value = ''; // Limpa a busca ao resetar o form
+            renderEvents(eventsCache); // Garante que a lista completa volte
         }
 
         // Event listener para o formulário (Criação e Edição)
@@ -391,20 +432,23 @@
                     throw new Error(errorDetail.detail || 'Ocorreu um erro.');
                 }
                 
-                // Substituindo alert()
                 console.log(`Evento ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso!`);
                 resetForm();
-                fetchEvents();
+                fetchEvents(); // Recarrega para atualizar o cache e a lista
 
             } catch (error) {
                 console.error(`Erro: ${error.message}`);
-                // Substituindo alert()
                 console.log(`[ERRO] Erro: ${error.message}`);
             }
         });
         
         // Event listener para o botão de cancelar edição
         cancelEditBtn.addEventListener('click', resetForm);
+        
+        // Novo: Event listener para o campo de busca
+        if(eventSearchInput) { 
+            eventSearchInput.addEventListener('input', handleSearch);
+        }
 
         // Carrega os eventos ao iniciar a página
         document.addEventListener('DOMContentLoaded', fetchEvents);
