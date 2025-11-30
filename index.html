@@ -48,7 +48,7 @@
         input[type="number"],
         input[type="date"],
         textarea,
-        select { /* Adicionado 'select' aqui para estilizar o dropdown */
+        select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -165,7 +165,6 @@
                 <input type="url" id="image" name="image" required>
             </div>
             
-            <!-- ALTERADO: Campo 'alt' agora é 'Tipo do Evento' (select) -->
             <div>
                 <label for="alt">Tipo do Evento:</label>
                 <select id="alt" name="alt" required>
@@ -198,6 +197,14 @@
                         value="Reservar agora" 
                         placeholder="Ex: Reservar para 01 de Janeiro" required>
             </div>
+
+            <!-- NOVO CAMPO ECOMMERCE -->
+            <div class="full-width">
+                <label for="ecommerce_link">Link do Produto (Ecommerce):</label>
+                <input type="url" id="ecommerce_link" name="ecommerce_link" 
+                        placeholder="https://sualoja.com.br/produto/excursao-x">
+            </div>
+            <!-- FIM NOVO CAMPO ECOMMERCE -->
             
             <!-- Campo Ano do Evento (year) é hidden e calculado no JS -->
             <input type="hidden" id="year" name="year">
@@ -231,7 +238,10 @@
     </div>
 
     <script>
-        const apiUrl = "https://anderson-fast-api.onrender.com/api/v1/events"; 
+        // ATENÇÃO: Se estiver testando localmente, mude para http://127.0.0.1:8000/api/v1/events
+        //const apiUrl = "http://127.0.0.1:8000/api/v1/events"; 
+        const apiUrl = "https://fast-api-anderson.vercel.app/api/v1/events"; // Produção
+
         const form = document.getElementById('event-form');
         const eventIdInput = document.getElementById('event-id');
         const formTitle = document.getElementById('form-title');
@@ -240,13 +250,11 @@
         const eventList = document.getElementById('event-list');
         const loadingDiv = document.getElementById('loading');
         
-        // Novo: Variável global para armazenar todos os eventos e evitar chamadas repetidas
         let eventsCache = [];
         const eventSearchInput = document.getElementById('event-search');
 
-        // Novo: Função para renderizar a lista de eventos (recebe um array para exibir)
         function renderEvents(eventsToDisplay) {
-            eventList.innerHTML = ''; // Limpa a lista existente
+            eventList.innerHTML = ''; 
 
             if (eventsToDisplay.length === 0) {
                 eventList.innerHTML = '<p>Nenhum evento encontrado.</p>';
@@ -263,6 +271,7 @@
                         <div>Data Texto: ${event.date}</div>
                         <div>Data ID: ${event.date_event}</div>
                         <div class="status">${event.active_event ? 'Ativo' : 'Inativo'} | ID: ${event.id}</div>
+                        ${event.ecommerce_link ? `<div><a href="${event.ecommerce_link}" target="_blank" style="color: #3498db;">Link Ecommerce</a></div>` : ''}
                     </div>
                     <div class="event-actions">
                         <button onclick="editEvent(${event.id})">Editar</button>
@@ -273,7 +282,6 @@
             });
         }
         
-        // Função para buscar e exibir os eventos (agora armazena no cache)
         async function fetchEvents() {
             loadingDiv.style.display = 'block';
             eventList.innerHTML = '';
@@ -283,12 +291,12 @@
                 
                 const events = await response.json();
                 
-                eventsCache = events; // Armazena a lista completa
+                eventsCache = events; 
                 
                 if (eventsCache.length === 0) {
                     eventList.innerHTML = '<p>Nenhum evento cadastrado ainda.</p>';
                 } else {
-                    renderEvents(eventsCache); // Renderiza a lista completa inicialmente
+                    renderEvents(eventsCache); 
                 }
             } catch (error) {
                 eventList.innerHTML = `<p style="color: red;">${error.message}</p>`;
@@ -297,16 +305,14 @@
             }
         }
 
-        // Novo: Função para lidar com a busca e filtro
         function handleSearch() {
             const searchTerm = eventSearchInput.value.toLowerCase().trim();
 
             if (searchTerm === '') {
-                renderEvents(eventsCache); // Se a busca estiver vazia, mostra todos do cache
+                renderEvents(eventsCache); 
                 return;
             }
 
-            // Filtra os eventos do cache com base no título
             const filteredEvents = eventsCache.filter(event => 
                 event.title.toLowerCase().includes(searchTerm)
             );
@@ -314,7 +320,6 @@
             renderEvents(filteredEvents);
         }
 
-        // Torna a função editEvent acessível globalmente
         window.editEvent = async function(id) {
             try {
                 const response = await fetch(`${apiUrl}/${id}`);
@@ -329,6 +334,10 @@
                 form.date.value = event.date;
                 form.date_event.value = event.date_event;
                 form.buttonText.value = event.buttonText;
+                
+                // POPULA O LINK DO ECOMMERCE
+                form.ecommerce_link.value = event.ecommerce_link || '';
+
                 form.active_event.checked = event.active_event;
                 form.cities.value = event.cities ? event.cities.join(', ') : '';
 
@@ -336,33 +345,27 @@
                 submitBtn.textContent = 'Salvar Alterações';
                 cancelEditBtn.style.display = 'inline-block';
                 window.scrollTo(0, 0);
-                eventSearchInput.value = ''; // Limpa a busca ao editar
+                eventSearchInput.value = ''; 
 
             } catch (error) {
                 console.error(`Erro ao carregar evento para edição: ${error.message}`);
-                console.log(`[ERRO] Erro ao carregar evento para edição: ${error.message}`); 
             }
         }
 
-        // Torna a função deleteEvent acessível globalmente
         window.deleteEvent = async function(id) {
-            console.log(`[AÇÃO] Tentativa de excluir evento com ID: ${id}`);
+            if(!confirm("Tem certeza que deseja excluir este evento?")) return;
             
             try {
                 const response = await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Falha ao excluir o evento.');
 
-                console.log('Evento excluído com sucesso!');
-                // Após exclusão, recarrega os eventos (e o cache)
                 fetchEvents(); 
 
             } catch (error) {
-                console.error(`Erro: ${error.message}`);
-                console.log(`[ERRO] Erro: ${error.message}`);
+                alert(`Erro: ${error.message}`);
             }
         }
         
-        // Função para limpar e resetar o formulário
         function resetForm() {
             form.reset();
             eventIdInput.value = '';
@@ -371,11 +374,11 @@
             cancelEditBtn.style.display = 'none';
             form.buttonText.value = 'Reservar agora';
             form.alt.value = ''; 
-            eventSearchInput.value = ''; // Limpa a busca ao resetar o form
-            renderEvents(eventsCache); // Garante que a lista completa volte
+            form.ecommerce_link.value = ''; // Limpa o campo do link
+            eventSearchInput.value = ''; 
+            renderEvents(eventsCache); 
         }
 
-        // Event listener para o formulário (Criação e Edição)
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -388,33 +391,32 @@
             const eventTitle = form.title.value;
             const dateEventValue = form.date_event.value;
 
-            // 1. Sincronizar Título e EventName (eventName recebe o title)
             const eventNameValue = eventTitle; 
             
-            // 2. Calcular o ano automaticamente a partir de date_event
             let yearValue = '';
             if (dateEventValue) {
                 try {
-                    // Espera-se o formato YYYY-MM-DD
                     yearValue = dateEventValue.substring(0, 4); 
                 } catch(err) {
                     console.error("Erro ao extrair ano da data:", err);
                 }
             }
 
-
             const eventData = {
                 image: form.image.value,
-                alt: form.alt.value, // Novo Tipo do Evento
+                alt: form.alt.value, 
                 title: eventTitle,
                 date: form.date.value,
                 date_event: dateEventValue,
-                year: yearValue, // <-- Ano calculado
+                year: yearValue, 
                 description: form.description.value,
                 buttonText: form.buttonText.value,
-                eventName: eventNameValue, // <-- Identificador é igual ao título
+                eventName: eventNameValue, 
                 cities: citiesArray,
-                active_event: form.active_event.checked
+                active_event: form.active_event.checked,
+                
+                // ENVIA O NOVO CAMPO
+                ecommerce_link: form.ecommerce_link.value || null 
             };
 
             const url = isEditing ? `${apiUrl}/${id}` : apiUrl;
@@ -432,25 +434,22 @@
                     throw new Error(errorDetail.detail || 'Ocorreu um erro.');
                 }
                 
-                console.log(`Evento ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso!`);
+                alert(`Evento ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso!`);
                 resetForm();
-                fetchEvents(); // Recarrega para atualizar o cache e a lista
+                fetchEvents(); 
 
             } catch (error) {
-                console.error(`Erro: ${error.message}`);
-                console.log(`[ERRO] Erro: ${error.message}`);
+                alert(`Erro: ${error.message}`);
+                console.error(error);
             }
         });
         
-        // Event listener para o botão de cancelar edição
         cancelEditBtn.addEventListener('click', resetForm);
         
-        // Novo: Event listener para o campo de busca
         if(eventSearchInput) { 
             eventSearchInput.addEventListener('input', handleSearch);
         }
 
-        // Carrega os eventos ao iniciar a página
         document.addEventListener('DOMContentLoaded', fetchEvents);
     </script>
 </body>
