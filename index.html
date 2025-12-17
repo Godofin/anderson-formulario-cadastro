@@ -143,6 +143,79 @@
         .search-container {
             margin-bottom: 20px;
         }
+
+        /* --- ESTILOS DO SWITCH TOGGLE --- */
+        .link-type-container {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+        .switch-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #25D366; /* Verde WhatsApp padrão */
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        /* Quando estiver marcado (Modo Link Personalizado) muda a cor */
+        input:checked + .slider {
+            background-color: #3498db; 
+        }
+        input:checked + .slider:before {
+            -webkit-transform: translateX(26px);
+            -ms-transform: translateX(26px);
+            transform: translateX(26px);
+        }
+        .switch-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .whatsapp-preview {
+            font-size: 0.85em;
+            color: #666;
+            word-break: break-all;
+            background: #e8f5e9;
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 3px solid #25D366;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -154,7 +227,7 @@
 
             <div>
                 <label for="title">Título do Evento:</label>
-                <input type="text" id="title" name="title" required>
+                <input type="text" id="title" name="title" required placeholder="Ex: Show da Xuxa">
             </div>
             
             <!-- Campo Nome (Identificador) é hidden e usa o Título -->
@@ -198,13 +271,38 @@
                         placeholder="Ex: Reservar para 01 de Janeiro" required>
             </div>
 
-            <!-- NOVO CAMPO ECOMMERCE -->
-            <div class="full-width">
-                <label for="ecommerce_link">Link do Produto (Ecommerce):</label>
-                <input type="url" id="ecommerce_link" name="ecommerce_link" 
-                        placeholder="https://sualoja.com.br/produto/excursao-x">
+            <!-- CONTROLE DE LINK (WHATSAPP vs ECOMMERCE) -->
+            <div class="full-width link-type-container">
+                <label>Destino do Botão de Reserva:</label>
+                
+                <div class="switch-wrapper">
+                    <span style="font-size: 0.9em; color: #25D366; font-weight: bold;">WhatsApp Automático</span>
+                    <label class="switch">
+                        <input type="checkbox" id="link_type_toggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <span style="font-size: 0.9em; color: #3498db; font-weight: bold;">Link Personalizado</span>
+                </div>
+
+                <!-- Painel WhatsApp (Exibido se o switch estiver desligado) -->
+                <div id="whatsapp-panel">
+                    <p style="margin: 0; font-size: 0.9em; color: #555;">O link será gerado automaticamente para o número <strong>(16) 98833-2631</strong>.</p>
+                    <div id="whatsapp-preview-text" class="whatsapp-preview">
+                        Aguardando título...
+                    </div>
+                </div>
+
+                <!-- Painel Link Manual (Exibido se o switch estiver ligado) -->
+                <div id="manual-link-panel" style="display: none;">
+                    <label for="ecommerce_link_input" style="font-size: 0.9em;">Link do Produto (URL Completa):</label>
+                    <input type="url" id="ecommerce_link_input" 
+                            placeholder="https://sualoja.com.br/produto/excursao-x">
+                </div>
+
+                <!-- Campo Hidden que armazena o valor final a ser enviado para o banco -->
+                <input type="hidden" id="final_ecommerce_link" name="ecommerce_link">
             </div>
-            <!-- FIM NOVO CAMPO ECOMMERCE -->
+            <!-- FIM CONTROLE DE LINK -->
             
             <!-- Campo Ano do Evento (year) é hidden e calculado no JS -->
             <input type="hidden" id="year" name="year">
@@ -238,6 +336,10 @@
     </div>
 
     <script>
+        // CONFIGURAÇÃO WHATSAPP
+        const whatsappPhone = "5516988332631";
+        const whatsappBaseMsg = "Olá! Tenho interesse na excursão para o evento";
+
         // ATENÇÃO: Se estiver testando localmente, mude para http://127.0.0.1:8000/api/v1/events
         //const apiUrl = "http://127.0.0.1:8000/api/v1/events"; 
         const apiUrl = "https://fast-api-anderson.vercel.app/api/v1/events"; // Produção
@@ -250,8 +352,52 @@
         const eventList = document.getElementById('event-list');
         const loadingDiv = document.getElementById('loading');
         
+        // Elementos do Switch de Link
+        const linkTypeToggle = document.getElementById('link_type_toggle');
+        const whatsappPanel = document.getElementById('whatsapp-panel');
+        const whatsappPreviewText = document.getElementById('whatsapp-preview-text');
+        const manualLinkPanel = document.getElementById('manual-link-panel');
+        const ecommerceLinkInput = document.getElementById('ecommerce_link_input');
+        const titleInput = document.getElementById('title');
+        
         let eventsCache = [];
         const eventSearchInput = document.getElementById('event-search');
+
+        // --- FUNÇÕES DE CONTROLE DO SWITCH ---
+
+        function generateWhatsappUrl(eventName) {
+            if (!eventName) return "";
+            const msg = `${whatsappBaseMsg} ${eventName}. Gostaria de mais informações.`;
+            return `https://api.whatsapp.com/send?phone=${whatsappPhone}&text=${encodeURIComponent(msg)}`;
+        }
+
+        function updateLinkUI() {
+            const isManual = linkTypeToggle.checked;
+            const currentTitle = titleInput.value;
+
+            if (isManual) {
+                // Modo Link Personalizado
+                whatsappPanel.style.display = 'none';
+                manualLinkPanel.style.display = 'block';
+                ecommerceLinkInput.setAttribute('required', 'true'); // Torna obrigatório se estiver visível
+            } else {
+                // Modo WhatsApp Automático
+                whatsappPanel.style.display = 'block';
+                manualLinkPanel.style.display = 'none';
+                ecommerceLinkInput.removeAttribute('required');
+                ecommerceLinkInput.value = ''; // Limpa o manual para evitar confusão
+
+                // Atualiza Preview
+                const generatedLink = generateWhatsappUrl(currentTitle);
+                whatsappPreviewText.textContent = generatedLink || "Digite o título do evento para ver o link...";
+            }
+        }
+
+        // Listeners para o Switch e Título
+        linkTypeToggle.addEventListener('change', updateLinkUI);
+        titleInput.addEventListener('input', updateLinkUI);
+
+        // --- FIM FUNÇÕES SWITCH ---
 
         function renderEvents(eventsToDisplay) {
             eventList.innerHTML = ''; 
@@ -271,7 +417,7 @@
                         <div>Data Texto: ${event.date}</div>
                         <div>Data ID: ${event.date_event}</div>
                         <div class="status">${event.active_event ? 'Ativo' : 'Inativo'} | ID: ${event.id}</div>
-                        ${event.ecommerce_link ? `<div><a href="${event.ecommerce_link}" target="_blank" style="color: #3498db;">Link Ecommerce</a></div>` : ''}
+                        ${event.ecommerce_link ? `<div><a href="${event.ecommerce_link}" target="_blank" style="color: #3498db;">Link Botão</a></div>` : ''}
                     </div>
                     <div class="event-actions">
                         <button onclick="editEvent(${event.id})">Editar</button>
@@ -335,11 +481,27 @@
                 form.date_event.value = event.date_event;
                 form.buttonText.value = event.buttonText;
                 
-                // POPULA O LINK DO ECOMMERCE
-                form.ecommerce_link.value = event.ecommerce_link || '';
-
                 form.active_event.checked = event.active_event;
                 form.cities.value = event.cities ? event.cities.join(', ') : '';
+
+                // LÓGICA INTELIGENTE DO LINK NA EDIÇÃO
+                const currentLink = event.ecommerce_link || '';
+                
+                // Verifica se é um link do nosso WhatsApp padrão
+                const isWhatsAppLink = currentLink.includes("api.whatsapp.com") && currentLink.includes(whatsappPhone);
+
+                if (isWhatsAppLink || currentLink === '') {
+                    // Modo Automático (Switch Desligado)
+                    linkTypeToggle.checked = false;
+                    ecommerceLinkInput.value = '';
+                } else {
+                    // Modo Manual (Switch Ligado)
+                    linkTypeToggle.checked = true;
+                    ecommerceLinkInput.value = currentLink;
+                }
+                
+                // Atualiza UI baseada nos valores carregados
+                updateLinkUI();
 
                 formTitle.textContent = 'Editando Evento';
                 submitBtn.textContent = 'Salvar Alterações';
@@ -374,7 +536,11 @@
             cancelEditBtn.style.display = 'none';
             form.buttonText.value = 'Reservar agora';
             form.alt.value = ''; 
-            form.ecommerce_link.value = ''; // Limpa o campo do link
+            
+            // Reset do switch para Automático
+            linkTypeToggle.checked = false; 
+            updateLinkUI();
+
             eventSearchInput.value = ''; 
             renderEvents(eventsCache); 
         }
@@ -390,7 +556,6 @@
 
             const eventTitle = form.title.value;
             const dateEventValue = form.date_event.value;
-
             const eventNameValue = eventTitle; 
             
             let yearValue = '';
@@ -400,6 +565,16 @@
                 } catch(err) {
                     console.error("Erro ao extrair ano da data:", err);
                 }
+            }
+
+            // DECISÃO DO LINK FINAL
+            let finalLinkValue = "";
+            if (linkTypeToggle.checked) {
+                // Modo Manual
+                finalLinkValue = ecommerceLinkInput.value;
+            } else {
+                // Modo WhatsApp Automático
+                finalLinkValue = generateWhatsappUrl(eventTitle);
             }
 
             const eventData = {
@@ -415,8 +590,8 @@
                 cities: citiesArray,
                 active_event: form.active_event.checked,
                 
-                // ENVIA O NOVO CAMPO
-                ecommerce_link: form.ecommerce_link.value || null 
+                // USA O VALOR CALCULADO
+                ecommerce_link: finalLinkValue
             };
 
             const url = isEditing ? `${apiUrl}/${id}` : apiUrl;
@@ -450,7 +625,10 @@
             eventSearchInput.addEventListener('input', handleSearch);
         }
 
-        document.addEventListener('DOMContentLoaded', fetchEvents);
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchEvents();
+            updateLinkUI(); // Inicializa UI do link
+        });
     </script>
 </body>
 </html>
