@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Cadastro de Eventos</title>
+    <title>Painel Administrativo - Eventos e Linktree</title>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -18,6 +18,34 @@
             color: #2c3e50;
             text-align: center;
         }
+
+        /* --- ESTILOS DAS ABAS DE NAVEGAÇÃO --- */
+        .admin-nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .admin-nav button {
+            background-color: #bdc3c7;
+            color: #2c3e50;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .admin-nav button:hover {
+            background-color: #95a5a6;
+        }
+        .admin-nav button.active {
+            background-color: #2c3e50;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
         .container {
             background: #fff;
             padding: 30px;
@@ -67,7 +95,9 @@
         input[type="checkbox"] {
             width: auto;
         }
-        button {
+        
+        /* Botões Gerais */
+        .btn-primary {
             background-color: #3498db;
             color: white;
             padding: 12px 20px;
@@ -77,13 +107,20 @@
             font-size: 16px;
             transition: background-color 0.3s;
         }
-        button:hover {
+        .btn-primary:hover {
             background-color: #2980b9;
         }
-        #cancel-edit-btn {
+        .btn-secondary {
             background-color: #7f8c8d;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
         }
-        #cancel-edit-btn:hover {
+        .btn-secondary:hover {
             background-color: #6c7a7d;
         }
         .form-actions {
@@ -92,11 +129,9 @@
             gap: 10px;
         }
 
-        /* Lista de Eventos */
-        #event-list {
-            margin-top: 30px;
-        }
-        .event-item {
+        /* Estilos das Listas (Comum) */
+        .item-list { margin-top: 30px; }
+        .list-item {
             background-color: #ecf0f1;
             padding: 15px;
             border-radius: 5px;
@@ -107,44 +142,52 @@
             gap: 15px;
             flex-wrap: wrap;
         }
-        .event-details {
-            flex-grow: 1;
-        }
-        .event-details strong {
+        .item-details { flex-grow: 1; }
+        .item-details strong {
             font-size: 1.1em;
             color: #2c3e50;
         }
-        .event-details .status {
+        .item-details .status {
             font-style: italic;
             font-size: 0.9em;
             color: #7f8c8d;
         }
-        .event-actions button {
+        .item-actions button {
             background-color: #e67e22;
+            color: white;
+            border: none;
             font-size: 14px;
             padding: 8px 12px;
+            border-radius: 4px;
             margin-left: 5px;
+            cursor: pointer;
         }
-        .event-actions button:hover {
-            background-color: #d35400;
-        }
-        .event-actions .delete-btn {
-            background-color: #e74c3c;
-        }
-        .event-actions .delete-btn:hover {
-            background-color: #c0392b;
-        }
-        #loading {
+        .item-actions button:hover { background-color: #d35400; }
+        .item-actions .delete-btn { background-color: #e74c3c; }
+        .item-actions .delete-btn:hover { background-color: #c0392b; }
+        
+        .loading {
             text-align: center;
             font-size: 1.2em;
             padding: 20px;
         }
-        /* Estilo para o campo de busca */
-        .search-container {
-            margin-bottom: 20px;
+        .search-container { margin-bottom: 20px; }
+
+        /* Específico Linktree */
+        .preview-img {
+            max-width: 50px;
+            max-height: 50px;
+            border-radius: 4px;
+            object-fit: cover;
+            margin-right: 15px;
+            display: block;
+        }
+        .link-header {
+            display: flex;
+            align-items: center;
         }
 
-        /* --- ESTILOS DO SWITCH TOGGLE --- */
+        /* Específico Eventos (Switch Toggle) */
         .link-type-container {
             background-color: #f8f9fa;
             padding: 15px;
@@ -172,12 +215,8 @@
         .slider {
             position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #25D366; /* Verde WhatsApp padrão */
-            -webkit-transition: .4s;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #25D366; /* Verde WhatsApp */
             transition: .4s;
             border-radius: 34px;
         }
@@ -189,23 +228,11 @@
             left: 4px;
             bottom: 4px;
             background-color: white;
-            -webkit-transition: .4s;
             transition: .4s;
             border-radius: 50%;
         }
-        /* Quando estiver marcado (Modo Link Personalizado) muda a cor */
-        input:checked + .slider {
-            background-color: #3498db; 
-        }
-        input:checked + .slider:before {
-            -webkit-transform: translateX(26px);
-            -ms-transform: translateX(26px);
-            transform: translateX(26px);
-        }
-        .switch-label {
-            font-weight: bold;
-            color: #555;
-        }
+        input:checked + .slider { background-color: #3498db; }
+        input:checked + .slider:before { transform: translateX(26px); }
         .whatsapp-preview {
             font-size: 0.85em;
             color: #666;
@@ -216,154 +243,226 @@
             border-left: 3px solid #25D366;
             margin-top: 5px;
         }
+
+        /* Oculta seções não ativas */
+        .view-section {
+            display: none;
+        }
+        .view-section.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1 id="form-title">Cadastrar Novo Evento</h1>
-        <form id="event-form">
-            <input type="hidden" id="event-id">
+    <!-- NAVEGAÇÃO -->
+    <div class="admin-nav">
+        <button id="tab-events" class="active" onclick="switchTab('events')">Gerenciar Eventos</button>
+        <button id="tab-linktree" onclick="switchTab('linktree')">Gerenciar Linktree</button>
+    </div>
 
-            <div>
-                <label for="title">Título do Evento:</label>
-                <input type="text" id="title" name="title" required placeholder="Ex: Show da Xuxa">
-            </div>
-            
-            <!-- Campo Nome (Identificador) é hidden e usa o Título -->
-            <input type="hidden" id="eventName" name="eventName">
+    <!-- ========================================== -->
+    <!-- SESSÃO: GERENCIAR EVENTOS                  -->
+    <!-- ========================================== -->
+    <div id="section-events" class="view-section active">
+        <div class="container">
+            <h1 id="event-form-title">Cadastrar Novo Evento</h1>
+            <form id="event-form">
+                <input type="hidden" id="event-id">
 
-            <div>
-                <label for="image">URL da Imagem:</label>
-                <input type="url" id="image" name="image" required>
-            </div>
-            
-            <div>
-                <label for="alt">Tipo do Evento:</label>
-                <select id="alt" name="alt" required>
-                    <option value="" disabled selected>Selecione o tipo</option>
-                    <option value="Ecoturismo/Viagens">Ecoturismo/Viagens</option>
-                    <option value="Shows/Eventos">Shows/Eventos</option>
-                </select>
-            </div>
-
-            <div class="full-width">
-                <label for="description">Descrição:</label>
-                <textarea id="description" name="description" required></textarea>
-            </div>
-            
-            <!-- CAMPO DATA E LOCAL SIMPLES -->
-            <div>
-                <label for="date">Data e Local (Texto):</label>
-                <input type="text" id="date" name="date" 
-                        placeholder="Exemplo: 01 de Janeiro de 2025 - Estádio, Cidade/Estado" required>
-            </div>
-            <!-- FIM CAMPO DATA E LOCAL SIMPLES -->
-
-            <div>
-                <label for="date_event">Data do Evento (YYYY-MM-DD):</label>
-                <input type="date" id="date_event" name="date_event" required>
-            </div>
-            <div>
-                <label for="buttonText">Texto do Botão:</label>
-                <input type="text" id="buttonText" name="buttonText" 
-                        value="Reservar agora" 
-                        placeholder="Ex: Reservar para 01 de Janeiro" required>
-            </div>
-
-            <!-- CONTROLE DE LINK (WHATSAPP vs ECOMMERCE) -->
-            <div class="full-width link-type-container">
-                <label>Destino do Botão de Reserva:</label>
+                <div>
+                    <label for="event-title">Título do Evento:</label>
+                    <input type="text" id="event-title" name="title" required placeholder="Ex: Show da Xuxa">
+                </div>
                 
-                <div class="switch-wrapper">
-                    <span style="font-size: 0.9em; color: #25D366; font-weight: bold;">WhatsApp Automático</span>
-                    <label class="switch">
-                        <input type="checkbox" id="link_type_toggle">
-                        <span class="slider round"></span>
-                    </label>
-                    <span style="font-size: 0.9em; color: #3498db; font-weight: bold;">Link Personalizado</span>
+                <input type="hidden" id="eventName" name="eventName">
+
+                <div>
+                    <label for="event-image">URL da Imagem:</label>
+                    <input type="url" id="event-image" name="image" required>
+                </div>
+                
+                <div>
+                    <label for="event-alt">Tipo do Evento:</label>
+                    <select id="event-alt" name="alt" required>
+                        <option value="" disabled selected>Selecione o tipo</option>
+                        <option value="Ecoturismo/Viagens">Ecoturismo/Viagens</option>
+                        <option value="Shows/Eventos">Shows/Eventos</option>
+                    </select>
                 </div>
 
-                <!-- Painel WhatsApp (Exibido se o switch estiver desligado) -->
-                <div id="whatsapp-panel">
-                    <p style="margin: 0; font-size: 0.9em; color: #555;">O link será gerado automaticamente para o número <strong>(16) 98833-2631</strong>.</p>
-                    <div id="whatsapp-preview-text" class="whatsapp-preview">
-                        Aguardando título...
+                <div class="full-width">
+                    <label for="event-description">Descrição:</label>
+                    <textarea id="event-description" name="description" required></textarea>
+                </div>
+                
+                <div>
+                    <label for="event-date-text">Data e Local (Texto):</label>
+                    <input type="text" id="event-date-text" name="date" 
+                            placeholder="Exemplo: 01 de Janeiro de 2025 - Estádio, Cidade/Estado" required>
+                </div>
+
+                <div>
+                    <label for="event-date">Data do Evento (YYYY-MM-DD):</label>
+                    <input type="date" id="event-date" name="date_event" required>
+                </div>
+                <div>
+                    <label for="event-button-text">Texto do Botão:</label>
+                    <input type="text" id="event-button-text" name="buttonText" 
+                            value="Reservar agora" 
+                            placeholder="Ex: Reservar para 01 de Janeiro" required>
+                </div>
+
+                <!-- CONTROLE DE LINK (WHATSAPP vs ECOMMERCE) -->
+                <div class="full-width link-type-container">
+                    <label>Destino do Botão de Reserva:</label>
+                    
+                    <div class="switch-wrapper">
+                        <span style="font-size: 0.9em; color: #25D366; font-weight: bold;">WhatsApp Automático</span>
+                        <label class="switch">
+                            <input type="checkbox" id="link_type_toggle">
+                            <span class="slider round"></span>
+                        </label>
+                        <span style="font-size: 0.9em; color: #3498db; font-weight: bold;">Link Personalizado</span>
                     </div>
+
+                    <div id="whatsapp-panel">
+                        <p style="margin: 0; font-size: 0.9em; color: #555;">O link será gerado automaticamente para o número <strong>(16) 98833-2631</strong>.</p>
+                        <div id="whatsapp-preview-text" class="whatsapp-preview">
+                            Aguardando título...
+                        </div>
+                    </div>
+
+                    <div id="manual-link-panel" style="display: none;">
+                        <label for="ecommerce_link_input" style="font-size: 0.9em;">Link do Produto (URL Completa):</label>
+                        <input type="url" id="ecommerce_link_input" 
+                                placeholder="https://sualoja.com.br/produto/excursao-x">
+                    </div>
+
+                    <input type="hidden" id="final_ecommerce_link" name="ecommerce_link">
                 </div>
-
-                <!-- Painel Link Manual (Exibido se o switch estiver ligado) -->
-                <div id="manual-link-panel" style="display: none;">
-                    <label for="ecommerce_link_input" style="font-size: 0.9em;">Link do Produto (URL Completa):</label>
-                    <input type="url" id="ecommerce_link_input" 
-                            placeholder="https://sualoja.com.br/produto/excursao-x">
+                
+                <input type="hidden" id="event-year" name="year">
+                
+                <div class="full-width">
+                    <label for="event-cities">Cidades (separadas por vírgula):</label>
+                    <input type="text" id="event-cities" name="cities" placeholder="Ex: São Paulo, Rio de Janeiro, Belo Horizonte">
                 </div>
-
-                <!-- Campo Hidden que armazena o valor final a ser enviado para o banco -->
-                <input type="hidden" id="final_ecommerce_link" name="ecommerce_link">
-            </div>
-            <!-- FIM CONTROLE DE LINK -->
-            
-            <!-- Campo Ano do Evento (year) é hidden e calculado no JS -->
-            <input type="hidden" id="year" name="year">
-            
-            <div class="full-width">
-                <label for="cities">Cidades (separadas por vírgula):</label>
-                <input type="text" id="cities" name="cities" placeholder="Ex: São Paulo, Rio de Janeiro, Belo Horizonte">
-            </div>
-            
-            <div class="checkbox-group full-width">
-                <input type="checkbox" id="active_event" name="active_event" checked>
-                <label for="active_event">Evento Ativo?</label>
-            </div>
-            <div class="form-actions">
-                <button type="submit" id="submit-btn">Cadastrar Evento</button>
-                <button type="button" id="cancel-edit-btn" style="display: none;">Cancelar Edição</button>
-            </div>
-        </form>
-    </div>
-
-    <div class="container">
-        <h2>Eventos Cadastrados</h2>
-        <!-- NOVO CAMPO DE BUSCA -->
-        <div class="search-container">
-            <label for="event-search">Buscar Evento por Título:</label>
-            <input type="text" id="event-search" placeholder="Digite o título do evento..." style="width: 100%;">
+                
+                <div class="checkbox-group full-width">
+                    <input type="checkbox" id="event-active" name="active_event" checked>
+                    <label for="event-active">Evento Ativo?</label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="event-submit-btn" class="btn-primary">Cadastrar Evento</button>
+                    <button type="button" id="event-cancel-btn" class="btn-secondary" style="display: none;">Cancelar Edição</button>
+                </div>
+            </form>
         </div>
-        <!-- FIM NOVO CAMPO DE BUSCA -->
-        <div id="loading">Carregando eventos...</div>
-        <div id="event-list"></div>
+
+        <div class="container">
+            <h2>Eventos Cadastrados</h2>
+            <div class="search-container">
+                <label for="event-search">Buscar Evento por Título:</label>
+                <input type="text" id="event-search" placeholder="Digite o título do evento..." style="width: 100%;">
+            </div>
+            <div id="event-loading" class="loading">Carregando eventos...</div>
+            <div id="event-list" class="item-list"></div>
+        </div>
     </div>
 
+
+    <!-- ========================================== -->
+    <!-- SESSÃO: GERENCIAR LINKTREE                 -->
+    <!-- ========================================== -->
+    <div id="section-linktree" class="view-section">
+        <div class="container">
+            <h1 id="link-form-title">Cadastrar Novo Link</h1>
+            <form id="linktree-form">
+                <input type="hidden" id="link-id">
+
+                <div class="full-width">
+                    <label for="link-name">Nome do Link (Título):</label>
+                    <input type="text" id="link-name" name="name" required placeholder="Ex: Lollapalooza 2024">
+                </div>
+
+                <div class="full-width">
+                    <label for="link-image_url">URL da Imagem:</label>
+                    <input type="url" id="link-image_url" name="image_url" required placeholder="https://exemplo.com/imagem.webp">
+                </div>
+
+                <div class="full-width">
+                    <label for="link-whatsapp_url">URL do WhatsApp:</label>
+                    <input type="url" id="link-whatsapp_url" name="whatsapp_url" required placeholder="http://wa.me/message/...">
+                </div>
+
+                <div class="checkbox-group full-width">
+                    <input type="checkbox" id="link-active" name="active" checked>
+                    <label for="link-active">Link Ativo?</label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" id="link-submit-btn" class="btn-primary">Cadastrar Link</button>
+                    <button type="button" id="link-cancel-btn" class="btn-secondary" style="display: none;">Cancelar Edição</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="container">
+            <h2>Links Cadastrados</h2>
+            <div class="search-container">
+                <label for="link-search">Buscar Link por Nome:</label>
+                <input type="text" id="link-search" placeholder="Digite o nome do link..." style="width: 100%;">
+            </div>
+            <div id="link-loading" class="loading">Carregando links...</div>
+            <div id="link-list" class="item-list"></div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- SCRIPTS                                    -->
+    <!-- ========================================== -->
     <script>
-        // CONFIGURAÇÃO WHATSAPP
+        // CONFIGURAÇÕES GERAIS
+        const apiBase = "https://fast-api-anderson.vercel.app/api/v1";
+        const eventsApiUrl = `${apiBase}/events`;
+        const linktreeApiUrl = `${apiBase}/linktree`;
+
+        // Função para alternar as abas
+        function switchTab(tabName) {
+            // Remove classes ativas
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.admin-nav button').forEach(el => el.classList.remove('active'));
+            
+            // Adiciona classes ativas aos selecionados
+            document.getElementById(`section-${tabName}`).classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // ====================================================
+        // LÓGICA DE EVENTOS
+        // ====================================================
         const whatsappPhone = "5516988332631";
         const whatsappBaseMsg = "Olá! Tenho interesse na excursão para o evento";
 
-        // ATENÇÃO: Se estiver testando localmente, mude para http://127.0.0.1:8000/api/v1/events
-        //const apiUrl = "http://127.0.0.1:8000/api/v1/events"; 
-        const apiUrl = "https://fast-api-anderson.vercel.app/api/v1/events"; // Produção
-
-        const form = document.getElementById('event-form');
+        const eventForm = document.getElementById('event-form');
         const eventIdInput = document.getElementById('event-id');
-        const formTitle = document.getElementById('form-title');
-        const submitBtn = document.getElementById('submit-btn');
-        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const eventFormTitle = document.getElementById('event-form-title');
+        const eventSubmitBtn = document.getElementById('event-submit-btn');
+        const eventCancelBtn = document.getElementById('event-cancel-btn');
         const eventList = document.getElementById('event-list');
-        const loadingDiv = document.getElementById('loading');
-        
-        // Elementos do Switch de Link
+        const eventLoadingDiv = document.getElementById('event-loading');
+        const eventSearchInput = document.getElementById('event-search');
+
         const linkTypeToggle = document.getElementById('link_type_toggle');
         const whatsappPanel = document.getElementById('whatsapp-panel');
         const whatsappPreviewText = document.getElementById('whatsapp-preview-text');
         const manualLinkPanel = document.getElementById('manual-link-panel');
         const ecommerceLinkInput = document.getElementById('ecommerce_link_input');
-        const titleInput = document.getElementById('title');
+        const eventTitleInput = document.getElementById('event-title');
         
         let eventsCache = [];
-        const eventSearchInput = document.getElementById('event-search');
-
-        // --- FUNÇÕES DE CONTROLE DO SWITCH ---
 
         function generateWhatsappUrl(eventName) {
             if (!eventName) return "";
@@ -371,55 +470,47 @@
             return `https://api.whatsapp.com/send?phone=${whatsappPhone}&text=${encodeURIComponent(msg)}`;
         }
 
-        function updateLinkUI() {
+        function updateEventLinkUI() {
             const isManual = linkTypeToggle.checked;
-            const currentTitle = titleInput.value;
+            const currentTitle = eventTitleInput.value;
 
             if (isManual) {
-                // Modo Link Personalizado
                 whatsappPanel.style.display = 'none';
                 manualLinkPanel.style.display = 'block';
-                ecommerceLinkInput.setAttribute('required', 'true'); // Torna obrigatório se estiver visível
+                ecommerceLinkInput.setAttribute('required', 'true');
             } else {
-                // Modo WhatsApp Automático
                 whatsappPanel.style.display = 'block';
                 manualLinkPanel.style.display = 'none';
                 ecommerceLinkInput.removeAttribute('required');
-                ecommerceLinkInput.value = ''; // Limpa o manual para evitar confusão
+                ecommerceLinkInput.value = ''; 
 
-                // Atualiza Preview
                 const generatedLink = generateWhatsappUrl(currentTitle);
                 whatsappPreviewText.textContent = generatedLink || "Digite o título do evento para ver o link...";
             }
         }
 
-        // Listeners para o Switch e Título
-        linkTypeToggle.addEventListener('change', updateLinkUI);
-        titleInput.addEventListener('input', updateLinkUI);
-
-        // --- FIM FUNÇÕES SWITCH ---
+        linkTypeToggle.addEventListener('change', updateEventLinkUI);
+        eventTitleInput.addEventListener('input', updateEventLinkUI);
 
         function renderEvents(eventsToDisplay) {
             eventList.innerHTML = ''; 
-
             if (eventsToDisplay.length === 0) {
                 eventList.innerHTML = '<p>Nenhum evento encontrado.</p>';
                 return;
             }
-
             eventsToDisplay.forEach(event => {
                 const item = document.createElement('div');
-                item.className = 'event-item';
+                item.className = 'list-item';
                 item.innerHTML = `
-                    <div class="event-details">
+                    <div class="item-details">
                         <strong>${event.title} (${event.year || 'Sem ano'})</strong>
                         <div>Tipo: ${event.alt || 'Não definido'}</div>
                         <div>Data Texto: ${event.date}</div>
                         <div>Data ID: ${event.date_event}</div>
-                        <div class="status">${event.active_event ? 'Ativo' : 'Inativo'} | ID: ${event.id}</div>
-                        ${event.ecommerce_link ? `<div><a href="${event.ecommerce_link}" target="_blank" style="color: #3498db;">Link Botão</a></div>` : ''}
+                        <div class="status">${event.active_event ? '🟢 Ativo' : '🔴 Inativo'} | ID: ${event.id}</div>
+                        ${event.ecommerce_link ? `<div><a href="${event.ecommerce_link}" target="_blank" style="color: #3498db;">🔗 Link Botão</a></div>` : ''}
                     </div>
-                    <div class="event-actions">
+                    <div class="item-actions">
                         <button onclick="editEvent(${event.id})">Editar</button>
                         <button class="delete-btn" onclick="deleteEvent(${event.id})">Excluir</button>
                     </div>
@@ -429,14 +520,12 @@
         }
         
         async function fetchEvents() {
-            loadingDiv.style.display = 'block';
+            eventLoadingDiv.style.display = 'block';
             eventList.innerHTML = '';
             try {
-                const response = await fetch(`${apiUrl}/all`);
+                const response = await fetch(`${eventsApiUrl}/all`);
                 if (!response.ok) throw new Error('Erro ao buscar eventos.');
-                
                 const events = await response.json();
-                
                 eventsCache = events; 
                 
                 if (eventsCache.length === 0) {
@@ -447,154 +536,116 @@
             } catch (error) {
                 eventList.innerHTML = `<p style="color: red;">${error.message}</p>`;
             } finally {
-                loadingDiv.style.display = 'none';
+                eventLoadingDiv.style.display = 'none';
             }
         }
 
-        function handleSearch() {
+        function handleEventSearch() {
             const searchTerm = eventSearchInput.value.toLowerCase().trim();
-
             if (searchTerm === '') {
                 renderEvents(eventsCache); 
                 return;
             }
-
-            const filteredEvents = eventsCache.filter(event => 
-                event.title.toLowerCase().includes(searchTerm)
-            );
-
+            const filteredEvents = eventsCache.filter(e => e.title.toLowerCase().includes(searchTerm));
             renderEvents(filteredEvents);
         }
 
         window.editEvent = async function(id) {
             try {
-                const response = await fetch(`${apiUrl}/${id}`);
+                const response = await fetch(`${eventsApiUrl}/${id}`);
                 if (!response.ok) throw new Error('Evento não encontrado.');
                 const event = await response.json();
 
                 eventIdInput.value = event.id;
-                form.title.value = event.title;
-                form.image.value = event.image;
-                form.alt.value = event.alt; 
-                form.description.value = event.description;
-                form.date.value = event.date;
-                form.date_event.value = event.date_event;
-                form.buttonText.value = event.buttonText;
-                
-                form.active_event.checked = event.active_event;
-                form.cities.value = event.cities ? event.cities.join(', ') : '';
+                eventForm.title.value = event.title;
+                eventForm.image.value = event.image;
+                eventForm.alt.value = event.alt; 
+                eventForm.description.value = event.description;
+                eventForm.date.value = event.date;
+                eventForm.date_event.value = event.date_event;
+                eventForm.buttonText.value = event.buttonText;
+                eventForm.active_event.checked = event.active_event;
+                eventForm.cities.value = event.cities ? event.cities.join(', ') : '';
 
-                // LÓGICA INTELIGENTE DO LINK NA EDIÇÃO
                 const currentLink = event.ecommerce_link || '';
-                
-                // Verifica se é um link do nosso WhatsApp padrão
                 const isWhatsAppLink = currentLink.includes("api.whatsapp.com") && currentLink.includes(whatsappPhone);
 
                 if (isWhatsAppLink || currentLink === '') {
-                    // Modo Automático (Switch Desligado)
                     linkTypeToggle.checked = false;
                     ecommerceLinkInput.value = '';
                 } else {
-                    // Modo Manual (Switch Ligado)
                     linkTypeToggle.checked = true;
                     ecommerceLinkInput.value = currentLink;
                 }
-                
-                // Atualiza UI baseada nos valores carregados
-                updateLinkUI();
+                updateEventLinkUI();
 
-                formTitle.textContent = 'Editando Evento';
-                submitBtn.textContent = 'Salvar Alterações';
-                cancelEditBtn.style.display = 'inline-block';
+                eventFormTitle.textContent = 'Editando Evento';
+                eventSubmitBtn.textContent = 'Salvar Alterações';
+                eventCancelBtn.style.display = 'inline-block';
                 window.scrollTo(0, 0);
                 eventSearchInput.value = ''; 
-
             } catch (error) {
-                console.error(`Erro ao carregar evento para edição: ${error.message}`);
+                alert(`Erro: ${error.message}`);
             }
         }
 
         window.deleteEvent = async function(id) {
             if(!confirm("Tem certeza que deseja excluir este evento?")) return;
-            
             try {
-                const response = await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+                const response = await fetch(`${eventsApiUrl}/${id}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Falha ao excluir o evento.');
-
                 fetchEvents(); 
-
             } catch (error) {
                 alert(`Erro: ${error.message}`);
             }
         }
         
-        function resetForm() {
-            form.reset();
+        function resetEventForm() {
+            eventForm.reset();
             eventIdInput.value = '';
-            formTitle.textContent = 'Cadastrar Novo Evento';
-            submitBtn.textContent = 'Cadastrar Evento';
-            cancelEditBtn.style.display = 'none';
-            form.buttonText.value = 'Reservar agora';
-            form.alt.value = ''; 
-            
-            // Reset do switch para Automático
+            eventFormTitle.textContent = 'Cadastrar Novo Evento';
+            eventSubmitBtn.textContent = 'Cadastrar Evento';
+            eventCancelBtn.style.display = 'none';
+            eventForm.buttonText.value = 'Reservar agora';
+            eventForm.alt.value = ''; 
             linkTypeToggle.checked = false; 
-            updateLinkUI();
-
+            updateEventLinkUI();
             eventSearchInput.value = ''; 
             renderEvents(eventsCache); 
         }
 
-        form.addEventListener('submit', async (e) => {
+        eventForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const id = eventIdInput.value;
             const isEditing = !!id;
-
-            const citiesInput = form.cities.value.trim();
+            const citiesInput = eventForm.cities.value.trim();
             const citiesArray = citiesInput ? citiesInput.split(',').map(city => city.trim()).filter(city => city !== '') : [];
-
-            const eventTitle = form.title.value;
-            const dateEventValue = form.date_event.value;
-            const eventNameValue = eventTitle; 
+            const eventTitle = eventForm.title.value;
+            const dateEventValue = eventForm.date_event.value;
             
             let yearValue = '';
             if (dateEventValue) {
-                try {
-                    yearValue = dateEventValue.substring(0, 4); 
-                } catch(err) {
-                    console.error("Erro ao extrair ano da data:", err);
-                }
+                try { yearValue = dateEventValue.substring(0, 4); } catch(err) {}
             }
 
-            // DECISÃO DO LINK FINAL
-            let finalLinkValue = "";
-            if (linkTypeToggle.checked) {
-                // Modo Manual
-                finalLinkValue = ecommerceLinkInput.value;
-            } else {
-                // Modo WhatsApp Automático
-                finalLinkValue = generateWhatsappUrl(eventTitle);
-            }
+            let finalLinkValue = linkTypeToggle.checked ? ecommerceLinkInput.value : generateWhatsappUrl(eventTitle);
 
             const eventData = {
-                image: form.image.value,
-                alt: form.alt.value, 
+                image: eventForm.image.value,
+                alt: eventForm.alt.value, 
                 title: eventTitle,
-                date: form.date.value,
+                date: eventForm.date.value,
                 date_event: dateEventValue,
                 year: yearValue, 
-                description: form.description.value,
-                buttonText: form.buttonText.value,
-                eventName: eventNameValue, 
+                description: eventForm.description.value,
+                buttonText: eventForm.buttonText.value,
+                eventName: eventTitle, 
                 cities: citiesArray,
-                active_event: form.active_event.checked,
-                
-                // USA O VALOR CALCULADO
+                active_event: eventForm.active_event.checked,
                 ecommerce_link: finalLinkValue
             };
 
-            const url = isEditing ? `${apiUrl}/${id}` : apiUrl;
+            const url = isEditing ? `${eventsApiUrl}/${id}` : eventsApiUrl;
             const method = isEditing ? 'PUT' : 'POST';
 
             try {
@@ -603,31 +654,176 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(eventData)
                 });
-
-                if (!response.ok) {
-                    const errorDetail = await response.json();
-                    throw new Error(errorDetail.detail || 'Ocorreu um erro.');
-                }
-                
+                if (!response.ok) throw new Error('Ocorreu um erro.');
                 alert(`Evento ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso!`);
-                resetForm();
+                resetEventForm();
                 fetchEvents(); 
-
             } catch (error) {
                 alert(`Erro: ${error.message}`);
-                console.error(error);
             }
         });
         
-        cancelEditBtn.addEventListener('click', resetForm);
+        eventCancelBtn.addEventListener('click', resetEventForm);
+        eventSearchInput.addEventListener('input', handleEventSearch);
+
+
+        // ====================================================
+        // LÓGICA DE LINKTREE
+        // ====================================================
+        const linkForm = document.getElementById('linktree-form');
+        const linkIdInput = document.getElementById('link-id');
+        const linkFormTitle = document.getElementById('link-form-title');
+        const linkSubmitBtn = document.getElementById('link-submit-btn');
+        const linkCancelBtn = document.getElementById('link-cancel-btn');
+        const linkList = document.getElementById('link-list');
+        const linkLoadingDiv = document.getElementById('link-loading');
+        const linkSearchInput = document.getElementById('link-search');
+
+        let linksCache = [];
+
+        function renderLinks(linksToDisplay) {
+            linkList.innerHTML = ''; 
+            if (linksToDisplay.length === 0) {
+                linkList.innerHTML = '<p>Nenhum link encontrado.</p>';
+                return;
+            }
+            linksToDisplay.forEach(link => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `
+                    <div class="item-details">
+                        <div class="link-header">
+                            ${link.image_url ? `<img src="${link.image_url}" alt="${link.name}" class="preview-img" onerror="this.style.display='none'">` : ''}
+                            <div>
+                                <strong>${link.name}</strong>
+                                <div><a href="${link.whatsapp_url}" target="_blank" style="color: #25D366; text-decoration: none;">🔗 Ver Link WhatsApp</a></div>
+                                <div class="status">${link.active ? '🟢 Ativo' : '🔴 Inativo'} | ID: ${link.id || link._id || 'N/A'}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button onclick="editLink('${link.id || link._id}')">Editar</button>
+                        <button class="delete-btn" onclick="deleteLink('${link.id || link._id}')">Excluir</button>
+                    </div>
+                `;
+                linkList.appendChild(item);
+            });
+        }
         
-        if(eventSearchInput) { 
-            eventSearchInput.addEventListener('input', handleSearch);
+        async function fetchLinks() {
+            linkLoadingDiv.style.display = 'block';
+            linkList.innerHTML = '';
+            try {
+                const response = await fetch(`${linktreeApiUrl}/all`);
+                if (!response.ok) throw new Error('Erro ao buscar links.');
+                const links = await response.json();
+                linksCache = links; 
+                
+                if (linksCache.length === 0) {
+                    linkList.innerHTML = '<p>Nenhum link cadastrado ainda.</p>';
+                } else {
+                    renderLinks(linksCache); 
+                }
+            } catch (error) {
+                linkList.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            } finally {
+                linkLoadingDiv.style.display = 'none';
+            }
         }
 
+        function handleLinkSearch() {
+            const searchTerm = linkSearchInput.value.toLowerCase().trim();
+            if (searchTerm === '') {
+                renderLinks(linksCache); 
+                return;
+            }
+            const filteredLinks = linksCache.filter(link => link.name.toLowerCase().includes(searchTerm));
+            renderLinks(filteredLinks);
+        }
+
+        window.editLink = async function(id) {
+            try {
+                const response = await fetch(`${linktreeApiUrl}/${id}`);
+                if (!response.ok) throw new Error('Link não encontrado.');
+                const link = await response.json();
+
+                linkIdInput.value = link.id || link._id;
+                linkForm.name.value = link.name;
+                linkForm.image_url.value = link.image_url;
+                linkForm.whatsapp_url.value = link.whatsapp_url;
+                linkForm.active.checked = link.active;
+
+                linkFormTitle.textContent = 'Editando Link';
+                linkSubmitBtn.textContent = 'Salvar Alterações';
+                linkCancelBtn.style.display = 'inline-block';
+                window.scrollTo(0, 0);
+                linkSearchInput.value = ''; 
+            } catch (error) {
+                alert(`Erro: ${error.message}`);
+            }
+        }
+
+        window.deleteLink = async function(id) {
+            if(!confirm("Tem certeza que deseja excluir este link?")) return;
+            try {
+                const response = await fetch(`${linktreeApiUrl}/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Falha ao excluir o link.');
+                fetchLinks(); 
+            } catch (error) {
+                alert(`Erro: ${error.message}`);
+            }
+        }
+        
+        function resetLinkForm() {
+            linkForm.reset();
+            linkIdInput.value = '';
+            linkFormTitle.textContent = 'Cadastrar Novo Link';
+            linkSubmitBtn.textContent = 'Cadastrar Link';
+            linkCancelBtn.style.display = 'none';
+            linkSearchInput.value = ''; 
+            renderLinks(linksCache); 
+        }
+
+        linkForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = linkIdInput.value;
+            const isEditing = !!id;
+
+            const linkData = {
+                name: linkForm.name.value,
+                image_url: linkForm.image_url.value,
+                whatsapp_url: linkForm.whatsapp_url.value,
+                active: linkForm.active.checked
+            };
+
+            const url = isEditing ? `${linktreeApiUrl}/${id}` : linktreeApiUrl;
+            const method = isEditing ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(linkData)
+                });
+                if (!response.ok) throw new Error('Ocorreu um erro ao salvar o link.');
+                alert(`Link ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso!`);
+                resetLinkForm();
+                fetchLinks(); 
+            } catch (error) {
+                alert(`Erro: ${error.message}`);
+            }
+        });
+        
+        linkCancelBtn.addEventListener('click', resetLinkForm);
+        linkSearchInput.addEventListener('input', handleLinkSearch);
+
+        // ====================================================
+        // INICIALIZAÇÃO DA PÁGINA
+        // ====================================================
         document.addEventListener('DOMContentLoaded', () => {
             fetchEvents();
-            updateLinkUI(); // Inicializa UI do link
+            updateEventLinkUI();
+            fetchLinks();
         });
     </script>
 </body>
