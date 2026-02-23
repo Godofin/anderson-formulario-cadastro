@@ -396,6 +396,12 @@
                     <input type="url" id="link-whatsapp_url" name="whatsapp_url" required placeholder="http://wa.me/message/...">
                 </div>
 
+                <!-- NOVA ENTRADA PARA DATA DO EVENTO -->
+                <div class="full-width">
+                    <label for="link-event_date">Data do Evento (Opcional):</label>
+                    <input type="date" id="link-event_date" name="event_date">
+                </div>
+
                 <div class="checkbox-group full-width">
                     <input type="checkbox" id="link-active" name="active" checked>
                     <label for="link-active">Link Ativo?</label>
@@ -690,6 +696,10 @@
             linksToDisplay.forEach(link => {
                 const item = document.createElement('div');
                 item.className = 'list-item';
+                
+                // Formata a exibição da data se ela existir
+                const dataDisplay = link.event_date ? link.event_date : 'Não definida';
+
                 item.innerHTML = `
                     <div class="item-details">
                         <div class="link-header">
@@ -697,6 +707,7 @@
                             <div>
                                 <strong>${link.name}</strong>
                                 <div><a href="${link.whatsapp_url}" target="_blank" style="color: #25D366; text-decoration: none;">🔗 Ver Link WhatsApp</a></div>
+                                <div>📅 Data do Evento: ${dataDisplay}</div>
                                 <div class="status">${link.active ? '🟢 Ativo' : '🔴 Inativo'} | ID: ${link.id || link._id || 'N/A'}</div>
                             </div>
                         </div>
@@ -751,6 +762,10 @@
                 linkForm.name.value = link.name;
                 linkForm.image_url.value = link.image_url;
                 linkForm.whatsapp_url.value = link.whatsapp_url;
+                
+                // Preenche a data do evento
+                linkForm.event_date.value = link.event_date || '';
+                
                 linkForm.active.checked = link.active;
 
                 linkFormTitle.textContent = 'Editando Link';
@@ -793,6 +808,7 @@
                 name: linkForm.name.value,
                 image_url: linkForm.image_url.value,
                 whatsapp_url: linkForm.whatsapp_url.value,
+                event_date: linkForm.event_date.value || null, // Inclui a data
                 active: linkForm.active.checked
             };
 
