@@ -349,6 +349,11 @@
                     <input type="text" id="event-cities" name="cities" placeholder="Ex: São Paulo, Rio de Janeiro, Belo Horizonte">
                 </div>
                 
+                <div class="full-width">
+                    <label for="event-saiba-mais">Link "Saiba Mais" (Opcional):</label>
+                    <input type="url" id="event-saiba-mais" name="saiba_mais_link" placeholder="Ex: bts.html ou https://...">
+                </div>
+
                 <div class="checkbox-group full-width">
                     <input type="checkbox" id="event-active" name="active_event" checked>
                     <label for="event-active">Evento Ativo?</label>
@@ -578,6 +583,7 @@
                 eventForm.date.value = event.date;
                 eventForm.date_event.value = event.date_event;
                 eventForm.buttonText.value = event.buttonText;
+                document.getElementById('event-saiba-mais').value = event.saiba_mais_link || '';
                 eventForm.active_event.checked = event.active_event;
                 document.getElementById('event-destaque').checked = event.destaque || false;
                 eventForm.cities.value = event.cities ? event.cities.join(', ') : '';
@@ -658,6 +664,7 @@
                 cities: citiesArray,
                 active_event: eventForm.active_event.checked,
                 ecommerce_link: finalLinkValue,
+                saiba_mais_link: document.getElementById('event-saiba-mais').value || null,
                 destaque: document.getElementById('event-destaque').checked
             };
 
