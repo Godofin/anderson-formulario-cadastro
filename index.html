@@ -353,6 +353,10 @@
                     <input type="checkbox" id="event-active" name="active_event" checked>
                     <label for="event-active">Evento Ativo?</label>
                 </div>
+                <div class="checkbox-group full-width">
+                    <input type="checkbox" id="event-destaque" name="destaque">
+                    <label for="event-destaque">⭐ Em Destaque?</label>
+                </div>
                 <div class="form-actions">
                     <button type="submit" id="event-submit-btn" class="btn-primary">Cadastrar Evento</button>
                     <button type="button" id="event-cancel-btn" class="btn-secondary" style="display: none;">Cancelar Edição</button>
@@ -405,6 +409,10 @@
                 <div class="checkbox-group full-width">
                     <input type="checkbox" id="link-active" name="active" checked>
                     <label for="link-active">Link Ativo?</label>
+                </div>
+                <div class="checkbox-group full-width">
+                    <input type="checkbox" id="link-destaque" name="destaque">
+                    <label for="link-destaque">⭐ Em Destaque?</label>
                 </div>
 
                 <div class="form-actions">
@@ -513,7 +521,7 @@
                         <div>Tipo: ${event.alt || 'Não definido'}</div>
                         <div>Data Texto: ${event.date}</div>
                         <div>Data ID: ${event.date_event}</div>
-                        <div class="status">${event.active_event ? '🟢 Ativo' : '🔴 Inativo'} | ID: ${event.id}</div>
+                        <div class="status">${event.active_event ? '🟢 Ativo' : '🔴 Inativo'} ${event.destaque ? '| ⭐ Destaque' : ''} | ID: ${event.id}</div>
                         ${event.ecommerce_link ? `<div><a href="${event.ecommerce_link}" target="_blank" style="color: #3498db;">🔗 Link Botão</a></div>` : ''}
                     </div>
                     <div class="item-actions">
@@ -571,6 +579,7 @@
                 eventForm.date_event.value = event.date_event;
                 eventForm.buttonText.value = event.buttonText;
                 eventForm.active_event.checked = event.active_event;
+                document.getElementById('event-destaque').checked = event.destaque || false;
                 eventForm.cities.value = event.cities ? event.cities.join(', ') : '';
 
                 const currentLink = event.ecommerce_link || '';
@@ -648,7 +657,8 @@
                 eventName: eventTitle, 
                 cities: citiesArray,
                 active_event: eventForm.active_event.checked,
-                ecommerce_link: finalLinkValue
+                ecommerce_link: finalLinkValue,
+                destaque: document.getElementById('event-destaque').checked
             };
 
             const url = isEditing ? `${eventsApiUrl}/${id}` : eventsApiUrl;
@@ -708,7 +718,7 @@
                                 <strong>${link.name}</strong>
                                 <div><a href="${link.whatsapp_url}" target="_blank" style="color: #25D366; text-decoration: none;">🔗 Ver Link WhatsApp</a></div>
                                 <div>📅 Data do Evento: ${dataDisplay}</div>
-                                <div class="status">${link.active ? '🟢 Ativo' : '🔴 Inativo'} | ID: ${link.id || link._id || 'N/A'}</div>
+                                <div class="status">${link.active ? '🟢 Ativo' : '🔴 Inativo'} ${link.destaque ? '| ⭐ Destaque' : ''} | ID: ${link.id || link._id || 'N/A'}</div>
                             </div>
                         </div>
                     </div>
@@ -767,6 +777,7 @@
                 linkForm.event_date.value = link.event_date || '';
                 
                 linkForm.active.checked = link.active;
+                document.getElementById('link-destaque').checked = link.destaque || false;
 
                 linkFormTitle.textContent = 'Editando Link';
                 linkSubmitBtn.textContent = 'Salvar Alterações';
@@ -808,8 +819,9 @@
                 name: linkForm.name.value,
                 image_url: linkForm.image_url.value,
                 whatsapp_url: linkForm.whatsapp_url.value,
-                event_date: linkForm.event_date.value || null, // Inclui a data
-                active: linkForm.active.checked
+                event_date: linkForm.event_date.value || null,
+                active: linkForm.active.checked,
+                destaque: document.getElementById('link-destaque').checked
             };
 
             const url = isEditing ? `${linktreeApiUrl}/${id}` : linktreeApiUrl;
